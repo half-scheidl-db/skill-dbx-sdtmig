@@ -37,4 +37,4 @@ The skill should be:
 
 ## **Notes**
 
-This repository contains the
+This repository contains the skill definition and supporting materials for **SDTM-focused reasoning and communication**.
