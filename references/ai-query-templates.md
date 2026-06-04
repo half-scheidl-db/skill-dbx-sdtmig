@@ -179,7 +179,7 @@ SELECT
       '- AEDECOD: MedDRA Preferred Term (your best coding)\n',
       '- AEBODSYS: MedDRA System Organ Class\n',
       '- AESEV: MILD | MODERATE | SEVERE (if mentioned)\n',
-      '- AESER: Y | N (serious if: death, life-threatening, hospitalization, disability, congenital anomaly)\n',
+      '- AESER: Y | N (serious per ICH E2A if: death, life-threatening, requires hospitalization, persistent disability, congenital anomaly, or important medical event requiring intervention to prevent permanent impairment)\n',
       '- AEREL: NOT RELATED | POSSIBLY RELATED | RELATED (if causality mentioned)\n',
       '- AEACN: action taken with study drug (if mentioned)\n',
       '- AEOUT: outcome (if mentioned)\n',
