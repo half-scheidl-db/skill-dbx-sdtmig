@@ -1,0 +1,77 @@
+Codelist_Code,Codelist_Name,Submission_Value,Definition
+C66731,SEX,F,Female
+C66731,SEX,M,Male
+C66731,SEX,U,Unknown
+C66731,SEX,UNDIFFERENTIATED,Undifferentiated
+C74457,RACE,AMERICAN INDIAN OR ALASKA NATIVE,A person having origins in any of the original peoples of North and South America
+C74457,RACE,ASIAN,A person having origins in any of the original peoples of the Far East Southeast Asia or the Indian subcontinent
+C74457,RACE,BLACK OR AFRICAN AMERICAN,A person having origins in any of the black racial groups of Africa
+C74457,RACE,NATIVE HAWAIIAN OR OTHER PACIFIC ISLANDER,A person having origins in any of the original peoples of Hawaii Guam Samoa or other Pacific Islands
+C74457,RACE,WHITE,A person having origins in any of the original peoples of Europe the Middle East or North Africa
+C74457,RACE,MULTIPLE,More than one race reported
+C74457,RACE,NOT REPORTED,Not reported
+C74457,RACE,UNKNOWN,Unknown
+C74457,RACE,OTHER,Other
+C66790,ETHNIC,HISPANIC OR LATINO,A person of Cuban Mexican Puerto Rican South or Central American or other Spanish culture or origin
+C66790,ETHNIC,NOT HISPANIC OR LATINO,A person not of Cuban Mexican Puerto Rican South or Central American or other Spanish culture or origin
+C66790,ETHNIC,NOT REPORTED,Not reported
+C66790,ETHNIC,UNKNOWN,Unknown
+C66742,NY,N,No
+C66742,NY,Y,Yes
+C99079,EPOCH,SCREENING,Period for assessing eligibility
+C99079,EPOCH,RUN-IN,Period between screening and treatment for washout or stabilization
+C99079,EPOCH,TREATMENT,Period during which treatment is administered
+C99079,EPOCH,FOLLOW-UP,Period after treatment for observing outcomes
+C99079,EPOCH,NOT APPLICABLE,Not applicable
+C66767,ACN,DOSE NOT CHANGED,Dose of study treatment was not changed
+C66767,ACN,DOSE REDUCED,Dose of study treatment was reduced
+C66767,ACN,DOSE INCREASED,Dose of study treatment was increased
+C66767,ACN,DRUG INTERRUPTED,Study treatment was temporarily interrupted
+C66767,ACN,DRUG WITHDRAWN,Study treatment was permanently discontinued
+C66767,ACN,NOT APPLICABLE,Not applicable
+C66767,ACN,UNKNOWN,Unknown action taken
+C66768,AEOUT,FATAL,Subject died
+C66768,AEOUT,NOT RECOVERED/NOT RESOLVED,Adverse event has not resolved at time of last observation
+C66768,AEOUT,RECOVERED/RESOLVED,Adverse event has completely resolved
+C66768,AEOUT,RECOVERED/RESOLVED WITH SEQUELAE,Adverse event resolved with lasting effects
+C66768,AEOUT,RECOVERING/RESOLVING,Adverse event is improving but not yet resolved
+C66768,AEOUT,UNKNOWN,Outcome is unknown
+C66769,AESEV,MILD,Awareness of sign or symptom but easily tolerated
+C66769,AESEV,MODERATE,Discomfort enough to cause interference with usual activity
+C66769,AESEV,SEVERE,Incapacitating with inability to perform usual activities
+C66756,AEREL,NOT RELATED,No reasonable possibility of causal relationship
+C66756,AEREL,UNLIKELY RELATED,Doubtful causal relationship
+C66756,AEREL,POSSIBLY RELATED,Causal relationship cannot be ruled out
+C66756,AEREL,PROBABLY RELATED,Likely causal relationship
+C66756,AEREL,RELATED,Definite causal relationship
+C71148,POSITION,SITTING,Seated position
+C71148,POSITION,STANDING,Upright position
+C71148,POSITION,SUPINE,Lying face up
+C71148,POSITION,PRONE,Lying face down
+C71148,POSITION,SEMI-RECUMBENT,Partially reclined
+C71148,POSITION,TRENDELENBURG,Supine with feet elevated above head
+C71148,POSITION,REVERSE TRENDELENBURG,Supine with head elevated above feet
+C74456,LOC,LEFT,Left side
+C74456,LOC,RIGHT,Right side
+C74456,LOC,BILATERAL,Both sides
+C99074,DIR,ANTERIOR,Front
+C99074,DIR,POSTERIOR,Back
+C99074,DIR,DORSAL,Back surface
+C99074,DIR,LATERAL,Side
+C99074,DIR,MEDIAL,Toward midline
+C99074,DIR,PROXIMAL,Closer to trunk
+C99074,DIR,DISTAL,Further from trunk
+C99074,DIR,UPPER,Above
+C99074,DIR,LOWER,Below
+C66728,STENTYP,SCHEDULED,Planned per protocol
+C66728,STENTYP,UNSCHEDULED,Not planned per protocol
+C66741,VSTEST,HEIGHT,Height
+C66741,VSTEST,WEIGHT,Weight
+C66741,VSTEST,BMI,BMI
+C66741,VSTEST,SYSBP,Systolic Blood Pressure
+C66741,VSTEST,DIABP,Diastolic Blood Pressure
+C66741,VSTEST,HR,Heart Rate
+C66741,VSTEST,TEMP,Temperature
+C66741,VSTEST,RESP,Respiratory Rate
+C66741,VSTEST,PULSE,Pulse Rate
+C66741,VSTEST,MAP,Mean Arterial Pressure
