@@ -1,6 +1,6 @@
 ---
 name: sdtmig-v34-reference
-description: Use this skill when the user needs SDTMIG v3.4 domain, dataset, variable, role, core, codelist, or structure lookup, or when mapping clinical trial data into SDTM-oriented semantics. Also use when the user asks about CDISC Therapeutic Area User Guides (TAUGs), needs disease-specific standards coverage, wants to generate synthetic clinical data via the CDISC API, or is using LLMs and Databricks ai_query to enrich, classify, or validate clinical trial data against SDTM or TAUG semantics. Use it for quick reference, implementation guidance, and consistency checks against the uploaded SDTMIG v3.4 workbook.
+description: Use this skill for SDTMIG v3.4 domain, dataset, variable, role, core, or codelist lookups, or when mapping clinical trial data into SDTM-compliant structures on Databricks. Also use for CDISC Therapeutic Area User Guide (TAUG) coverage queries. Covers ai_query and synthetic data patterns only when the context is SDTM or clinical trial data.
 license: Proprietary source content from user-provided workbook; package structure and instructions authored here.
 metadata:
   source: user-uploaded SDTMIG_v3.4.xlsx workbook
