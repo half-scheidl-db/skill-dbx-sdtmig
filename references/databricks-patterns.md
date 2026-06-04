@@ -114,7 +114,7 @@ import dlt
 
 DOMAIN_REQUIRED_VARS = {
     "AE": ["studyid", "domain", "usubjid", "aeseq", "aeterm", "aedecod"],
-    "DM": ["studyid", "domain", "usubjid", "subjid", "rfstdtc"],
+    "DM": ["studyid", "domain", "usubjid", "subjid", "siteid", "sex", "country"],
     "LB": ["studyid", "domain", "usubjid", "lbseq", "lbtestcd", "lbtest"],
     "VS": ["studyid", "domain", "usubjid", "vsseq", "vstestcd", "vstest"],
     "EX": ["studyid", "domain", "usubjid", "exseq", "extrt"],
