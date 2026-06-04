@@ -12,7 +12,7 @@ How to represent SDTMIG v3.4 metadata using Databricks Unity Catalog constructs.
 | Num | `--SEQ`, `--DY` | `INT` | Sequence numbers and study days |
 | Num | General numeric | `DOUBLE` | Lab results, vital signs measurements |
 | Char | `--DTC` (dates) | `STRING` | ISO 8601 partial dates cannot use DATE type |
-| Num | `--DUR` (durations) | `STRING` | ISO 8601 duration format stored as text |
+| Char | `--DUR` (durations) | `STRING` | ISO 8601 duration format (Char in SDTMIG, e.g., "PT2H30M") |
 
 ### Why --DTC stays STRING
 
@@ -146,9 +146,9 @@ CREATE TABLE IF NOT EXISTS clinical_data.study_abc123.dm (
   domain      STRING    NOT NULL  COMMENT 'Two-character abbreviation for the domain.',
   usubjid     STRING    NOT NULL  COMMENT 'Identifier used to uniquely identify a subject across all studies.',
   subjid      STRING    NOT NULL  COMMENT 'Subject identifier unique within a study.',
-  rfstdtc     STRING    NOT NULL  COMMENT 'Subject reference start date/time (ISO 8601).',
+  rfstdtc     STRING              COMMENT 'Subject reference start date/time (ISO 8601). May be null for screen failures.',
   rfendtc     STRING              COMMENT 'Subject reference end date/time (ISO 8601).',
-  siteid      STRING              COMMENT 'Unique identifier for a site within a study.',
+  siteid      STRING    NOT NULL  COMMENT 'Unique identifier for a site within a study.',
   brthdtc     STRING              COMMENT 'Date/time of birth (ISO 8601).',
   age         DOUBLE              COMMENT 'Age at reference start date.',
   ageu        STRING              COMMENT 'Units for AGE: YEARS, MONTHS, WEEKS, DAYS, HOURS.',
@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS clinical_data.study_abc123.dm (
   arm         STRING              COMMENT 'Description of planned arm.',
   actarmcd    STRING              COMMENT 'Short name for actual arm.',
   actarm      STRING              COMMENT 'Description of actual arm.',
-  country     STRING              COMMENT 'Country (ISO 3166 three-letter code).',
+  country     STRING    NOT NULL  COMMENT 'Country (ISO 3166 three-letter code).',
   dmdtc       STRING              COMMENT 'Date/time of collection (ISO 8601).',
   dmdy        INT                 COMMENT 'Study day of collection.'
 )
