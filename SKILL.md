@@ -38,7 +38,7 @@ The Therapeutic Area reference is an **index of TAUGs** (names, versions, standa
 ## How to use this skill
 
 1. Start with `references/datasets.md` when the user asks about domain coverage, classes, or record structure.
-2. Use `references/variables.md` when the user asks about variable presence, order, role, datatype, codelists, notes, or core status.
+2. Use `references/domains/{DOMAIN}.md` (e.g., `references/domains/AE.md`) when the user asks about variable presence, order, role, datatype, codelists, notes, or core status for a specific domain.
 3. Use `references/workbook-readme.md` when the user needs column definitions or clarification of workbook fields.
 4. Use `references/cdisc_therapeutic_areas.md` when the user asks about:
    - which therapeutic areas have CDISC TAUGs
@@ -66,7 +66,7 @@ When appropriate, structure answers like this:
 ## Available references
 
 - `references/datasets.md` — dataset list, class, label, and record structure
-- `references/variables.md` — variable-level metadata grouped by dataset
+- `references/domains/*.md` — per-domain variable metadata files (63 domains, e.g., AE.md, DM.md, LB.md)
 - `references/workbook-readme.md` — workbook column definitions
 - `references/datasets.csv` — machine-readable dataset metadata
 - `references/variables.csv` — machine-readable variable metadata

@@ -1,0 +1,48 @@
+# AG — Procedure Agents
+
+**Class:** Interventions  
+**Structure:** One record per recorded intervention occurrence per subject
+
+| Variable Order | Variable Name | Variable Label | Type | Role | Core | CDISC CT Codelist Code(s) | Codelist Submission Value(s) | Described Value Domain(s) | Value List | CDISC Notes |
+|---:|---|---|---|---|---|---|---|---|---|---|
+| 1 | STUDYID | Study Identifier | Char | Identifier | Req |  |  |  |  | Unique identifier for a study. |
+| 2 | DOMAIN | Domain Abbreviation | Char | Identifier | Req |  |  |  | AG | Two-character abbreviation for the domain. |
+| 3 | USUBJID | Unique Subject Identifier | Char | Identifier | Req |  |  |  |  | Identifier used to uniquely identify a subject across all studies for all applications or submissions involving the product. |
+| 4 | AGSEQ | Sequence Number | Num | Identifier | Req |  |  |  |  | Sequence number given to ensure uniqueness of subject records within a domain. May be any valid number. |
+| 5 | AGGRPID | Group ID | Char | Identifier | Perm |  |  |  |  | Used to tie together a block of related records in a single domain for a subject. |
+| 6 | AGSPID | Sponsor-Defined Identifier | Char | Identifier | Perm |  |  |  |  | Sponsor-defined reference number. May be preprinted on the CRF as an explicit line identifier or defined in the sponsor's operational database. Example: Line number from the procedure or test page. |
+| 7 | AGLNKID | Link ID | Char | Identifier | Perm |  |  |  |  | Identifier used to link related records across domains.This may be a one-to-one or a one-to-many relationship. |
+| 8 | AGLNKGRP | Link Group ID | Char | Identifier | Perm |  |  |  |  | Identifier used to link related records across domains.This will usually be a many-to-one relationship. |
+| 9 | AGTRT | Reported Agent Name | Char | Topic | Req |  |  |  |  | Verbatim medication name that is either preprinted or collected on a CRF. |
+| 10 | AGMODIFY | Modified Reported Name | Char | Synonym Qualifier | Perm |  |  |  |  | If AGTRT is modified to facilitate coding, then AGMODIFY will contain the modified text. |
+| 11 | AGDECOD | Standardized Agent Name | Char | Synonym Qualifier | Perm |  |  |  |  | Standardized or dictionary-derived text description of AGTRT or AGMODIFY. Equivalent to the generic medication name in WHO Drug. The sponsor is expected to provide the dictionary name and version used to map the terms utilizing the external codelist element in the Define-XML document. If an intervention term does not have a decode value in the dictionary, then AGDECOD will be left blank. |
+| 12 | AGCAT | Category for Agent | Char | Grouping Qualifier | Perm |  |  |  |  | Used to define a category of agent. Examples: "CHALLENGE AGENT", "PET TRACER". |
+| 13 | AGSCAT | Subcategory for Agent | Char | Grouping Qualifier | Perm |  |  |  |  | Further categorization of agent. |
+| 14 | AGPRESP | AG Pre-Specified | Char | Variable Qualifier | Perm | C66742 |  |  |  | Used to indicate whether ("Y"/null) information about the use of a specific agent was solicited on the CRF. |
+| 15 | AGOCCUR | AG Occurrence | Char | Record Qualifier | Perm | C66742 |  |  |  | When the use of specific agent is solicited, AGOCCUR is used to indicate whether ("Y"/"N") use of the agent occurred. Values are null for agents not specifically solicited. |
+| 16 | AGSTAT | Completion Status | Char | Record Qualifier | Perm | C66789 |  |  |  | Used to indicate that a question about a prespecified agent was not answered. Should be null or have a value of "NOT DONE". |
+| 17 | AGREASND | Reason Procedure Agent Not Collected | Char | Record Qualifier | Perm |  |  |  |  | Describes the reason a response to a question about the occurrence of a procedure agent was not collected. Used in conjunction with AGSTAT when value is "NOT DONE". |
+| 18 | AGCLAS | Agent Class | Char | Variable Qualifier | Perm |  |  |  |  | Drug class. May be obtained from coding. When coding to a single class, populate with class value. If using a dictionary and coding to multiple classes, follow guidance in Section 4.2.8.3, Multiple Values for a Non-result Qualifier Variable, or omit AGCLAS. |
+| 19 | AGCLASCD | Agent Class Code | Char | Variable Qualifier | Perm |  |  |  |  | Class code corresponding to AGCLAS. Drug class. May be obtained from coding. When coding to a single class, populate with class code. If using a dictionary and coding to multiple classes, follow guidance in Section 4.2.8.3, Multiple Values for a Non-result Qualifier Variable, or omit AGCLASCD. |
+| 20 | AGDOSE | Dose per Administration | Num | Record Qualifier | Perm |  |  |  |  | Amount of AGTRT taken. |
+| 21 | AGDOSTXT | Dose Description | Char | Record Qualifier | Perm |  |  |  |  | Dosing amounts or a range of dosing information collected in text form. Units may be stored in AGDOSU. Examples: "200-400", "15-20". |
+| 22 | AGDOSU | Dose Units | Char | Variable Qualifier | Perm | C71620 |  |  |  | Units for AGDOSE and AGDOSTXT. Examples: "ng", "mg", "mg/kg". |
+| 23 | AGDOSFRM | Dose Form | Char | Variable Qualifier | Perm | C66726 |  |  |  | Dose form for AGTRT. Examples: "TABLET", "AEROSOL". |
+| 24 | AGDOSFRQ | Dosing Frequency per Interval | Char | Record Qualifier | Perm | C71113 |  |  |  | Usually expressed as the number of repeated administrations of AGDOSE within a specific time period. Example: "ONCE". |
+| 25 | AGROUTE | Route of Administration | Char | Variable Qualifier | Perm | C66729 |  |  |  | Route of administration for AGTRT. Example: "ORAL". |
+| 26 | VISITNUM | Visit Number | Num | Timing | Exp |  |  |  |  | 1. Clinical encounter number. \n 2. Numeric version of VISIT, used for sorting. |
+| 27 | VISIT | Visit Name | Char | Timing | Perm |  |  |  |  | 1. Protocol-defined description of clinical encounter. \n 2. May be used in addition to VISITNUM and/or VISITDY. |
+| 28 | VISITDY | Planned Study Day of Visit | Num | Timing | Perm |  |  |  |  | Planned study day of the visit based upon RFSTDTC in Demographics. |
+| 29 | TAETORD | Planned Order of Element within Arm | Num | Timing | Perm |  |  |  |  | Number that gives the planned order of the element within the arm for the element in which the agent administration started. |
+| 30 | EPOCH | Epoch | Char | Timing | Perm | C99079 |  |  |  | Epoch associated with the start date/time of the agent administration started. |
+| 31 | AGSTDTC | Start Date/Time of Agent | Char | Timing | Perm |  |  | ISO 8601 datetime or interval |  | The date/time when administration of the treatment indicated by AGTRT and the dosing variables began. |
+| 32 | AGENDTC | End Date/Time of Agent | Char | Timing | Perm |  |  | ISO 8601 datetime or interval |  | The date/time when administration of the treatment indicated by AGTRT and the dosing variables ended. |
+| 33 | AGSTDY | Study Day of Start of Agent | Num | Timing | Perm |  |  |  |  | Study day of start of agent relative to the sponsor-defined RFSTDTC. |
+| 34 | AGENDY | Study Day of End of Agent | Num | Timing | Perm |  |  |  |  | Study day of end of agent relative to the sponsor-defined RFSTDTC. |
+| 35 | AGDUR | Duration of Agent | Char | Timing | Perm |  |  | ISO 8601 duration |  | Collected duration for an agent episode. Used only if collected on the CRF and not derived from start and end date/times. |
+| 36 | AGSTRF | Start Relative to Reference Period | Char | Timing | Perm | C66728 |  |  |  | Describes the start of the agent relative to sponsor-defined reference period. The sponsor-defined reference period is a continuous period of time defined by a discrete starting point and a discrete ending point (represented by RFSTDTC and RFENDTC in Demographics). If information such as "PRIOR", "ONGOING", or "CONTINUING" was collected, this information may be translated into AGSTRF. \n Not all values of the codelist are allowable for this variable. See Section 4.4.7, Use of Relative Timing Variables. |
+| 37 | AGENRF | End Relative to Reference Period | Char | Timing | Perm | C66728 |  |  |  | Describes the end of the agent relative to the sponsor-defined reference period. The sponsor-defined reference period is a continuous period of time defined by a discrete starting point and a discrete ending point (represented by RFSTDTC and RFENDTC in Demographics). If information such as "PRIOR", "ONGOING", or "CONTINUING" was collected, this information may be translated into AGENRF. \n Not all values of the codelist are allowable for this variable. See Section 4.4.7, Use of Relative Timing Variables. |
+| 38 | AGSTRTPT | Start Relative to Reference Time Point | Char | Timing | Perm | C66728 |  |  |  | Identifies the start of the agent as being before or after the sponsor-defined reference time point defined by variable AGSTTPT. \n Not all values of the codelist are allowable for this variable. See Section 4.4.7, Use of Relative Timing Variables. |
+| 39 | AGSTTPT | Start Reference Time Point | Char | Timing | Perm |  |  |  |  | Description or date/time in ISO 8601 character format of the reference point referred to by AGSTRTPT. Examples: "2003-12-15", "VISIT 1". |
+| 40 | AGENRTPT | End Relative to Reference Time Point | Char | Timing | Perm | C66728 |  |  |  | Identifies the end of the agent as being before or after the reference time point defined by variable AGENTPT. Identifies the end of the agent as being before or after the sponsor-defined reference time point defined by variable AGENTPT. \n Not all values of the codelist are allowable for this variable. See Section 4.4.7, Use of Relative Timing Variables. |
+| 41 | AGENTPT | End Reference Time Point | Char | Timing | Perm |  |  |  |  | Description or date/time in ISO 8601 character format of the reference point referred to by AGENRTPT. Examples: "2003-12-25", "VISIT 2". |
