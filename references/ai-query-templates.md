@@ -40,47 +40,52 @@ WHERE aedecod IS NULL OR aebodsys IS NULL
 
 ## 2. EPOCH Validation
 
-Check that visit dates and assigned epochs are temporally consistent.
+Check that observation dates and assigned epochs are temporally consistent. Uses the SE (Subject Elements) domain — which carries the actual epoch-to-date mapping per subject — joined with a findings domain (e.g., LB) that has EPOCH assigned per observation.
 
 ```sql
 WITH epoch_checks AS (
   SELECT
-    sv.usubjid,
-    sv.visit,
-    sv.visitnum,
-    sv.epoch,
-    sv.svstdtc,
+    lb.usubjid,
+    lb.lbtestcd,
+    lb.lbdtc,
+    lb.epoch,
     dm.rfstdtc,
+    se.sestdtc AS epoch_start,
+    se.seendtc AS epoch_end,
     ai_query(
       'databricks-meta-llama-3-3-70b-instruct',
       CONCAT(
         'You are a clinical data reviewer checking SDTM epoch assignments. ',
         'In a typical clinical trial, epochs occur in this order: SCREENING, RUN-IN, TREATMENT, FOLLOW-UP. ',
         'The treatment reference start date is: ', COALESCE(dm.rfstdtc, 'unknown'), '. ',
-        'A subject visit "', sv.visit, '" (visit number ', CAST(sv.visitnum AS STRING), ') ',
-        'occurred on ', COALESCE(sv.svstdtc, 'unknown date'), ' ',
-        'and is assigned to epoch "', sv.epoch, '". ',
-        'Is this epoch assignment plausible? ',
+        'The epoch "', lb.epoch, '" for this subject spans from ',
+        COALESCE(se.sestdtc, 'unknown'), ' to ', COALESCE(se.seendtc, 'unknown'), '. ',
+        'A lab observation occurred on ', COALESCE(lb.lbdtc, 'unknown date'), ' ',
+        'and is assigned to epoch "', lb.epoch, '". ',
+        'Is this epoch assignment plausible given the epoch date range? ',
         'Respond with JSON: {"valid": true/false, "reason": "brief explanation"}'
       )
     ) AS validation_result
-  FROM clinical_data.study_abc123.sv sv
-  LEFT JOIN clinical_data.study_abc123.dm dm ON sv.usubjid = dm.usubjid
-  WHERE sv.epoch IS NOT NULL
+  FROM clinical_data.study_abc123.lb lb
+  LEFT JOIN clinical_data.study_abc123.dm dm ON lb.usubjid = dm.usubjid
+  LEFT JOIN clinical_data.study_abc123.se se
+    ON lb.usubjid = se.usubjid AND lb.epoch = se.epoch
+  WHERE lb.epoch IS NOT NULL
 )
 SELECT *
 FROM epoch_checks
 WHERE get_json_object(validation_result, '$.valid') = 'false'
 ```
 
-**Input:** Subject visits (SV) with epoch assignments, joined with Demographics (DM) for treatment start date.
+**Input:** Lab results (LB) with epoch assignments, joined with Subject Elements (SE) for epoch date ranges and Demographics (DM) for treatment start date. Note: EPOCH is a variable in most observation domains (AE, LB, VS, EX, etc.) but not in SV — the SE domain provides the epoch-to-date mapping.
 
 **Output:** Rows where the LLM flags the epoch assignment as implausible, with reasoning.
 
 **Notes:**
 - This is a screening tool for data managers, not a definitive validation
 - False positives are expected for complex study designs (crossover, adaptive)
-- Filter to specific subjects or visits with `WHERE` to reduce cost
+- Adaptable to any domain that carries EPOCH (AE, VS, EX, etc.) — just replace the source table
+- Filter to specific subjects with `WHERE` to reduce cost
 
 ---
 
