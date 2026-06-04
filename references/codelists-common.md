@@ -188,22 +188,11 @@ Directionality — anatomical direction qualifier.
 
 ---
 
-## STENTYP (C66729)
+## VSTESTCD (C66741)
 
-Study event type.
+Vital signs test short names (used for VSTESTCD variable).
 
-| Submission Value | Definition |
-|---|---|
-| SCHEDULED | Planned per protocol |
-| UNSCHEDULED | Not planned per protocol |
-
----
-
-## VSTEST (C66741)
-
-Vital signs test names.
-
-| Submission Value (VSTESTCD) | VSTEST (Full Name) | Typical Unit |
+| Submission Value (VSTESTCD) | VSTEST (Full Name, codelist C67153) | Typical Unit |
 |---|---|---|
 | HEIGHT | Height | cm |
 | WEIGHT | Weight | kg |
