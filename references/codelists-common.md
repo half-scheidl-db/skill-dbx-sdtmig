@@ -158,9 +158,9 @@ Position of the subject during measurement.
 
 ---
 
-## LOC (C74456)
+## LAT (C99073)
 
-Laterality — anatomical location qualifier.
+Laterality qualifier.
 
 | Submission Value | Definition |
 |---|---|
@@ -188,7 +188,7 @@ Directionality — anatomical direction qualifier.
 
 ---
 
-## STENTYP (C66728)
+## STENTYP (C66729)
 
 Study event type.
 
