@@ -9,7 +9,8 @@ How to represent SDTMIG v3.4 metadata using Databricks Unity Catalog constructs.
 | SDTM Type | Variable Pattern | Unity Catalog Type | Notes |
 |-----------|-----------------|-------------------|-------|
 | Char | General text | `STRING` | Default for all Char variables |
-| Num | `--SEQ`, `--DY` | `INT` | Sequence numbers and study days |
+| Num | `--DY` | `INT` | Study day relative to reference date |
+| Num | `--SEQ` | `DOUBLE` | Sequence numbers — SDTMIG permits decimals (e.g., 1.1) |
 | Num | General numeric | `DOUBLE` | Lab results, vital signs measurements |
 | Char | `--DTC` (dates) | `STRING` | ISO 8601 partial dates cannot use DATE type |
 | Char | `--DUR` (durations) | `STRING` | ISO 8601 duration format (Char in SDTMIG, e.g., "PT2H30M") |
@@ -26,11 +27,12 @@ SDTM dates use ISO 8601 with permitted partial representations (e.g., `2024-03`,
 |-----------|--------|---------|
 | Identifier | `sdtm_role:identifier` | Subject/record keys |
 | Topic | `sdtm_role:topic` | The focus of the observation |
-| Qualifier | `sdtm_role:qualifier` | Additional context about the topic |
-| Timing | `sdtm_role:timing` | When the observation occurred |
+| Grouping Qualifier | `sdtm_role:grouping_qualifier` | Groups related records (e.g., --CAT, --SCAT) |
+| Result Qualifier | `sdtm_role:result_qualifier` | The result or finding (e.g., --ORRES, --STRESC) |
 | Record Qualifier | `sdtm_role:record_qualifier` | Qualifies the entire record |
-| Synonym Qualifier | `sdtm_role:synonym_qualifier` | Alternative names |
 | Variable Qualifier | `sdtm_role:variable_qualifier` | Qualifies a specific variable |
+| Synonym Qualifier | `sdtm_role:synonym_qualifier` | Alternative names |
+| Timing | `sdtm_role:timing` | When the observation occurred |
 | Rule | `sdtm_role:rule` | Algorithmic or rule-based |
 
 ```sql
@@ -39,7 +41,7 @@ ALTER TABLE clinical_data.study_abc123.ae
 ALTER TABLE clinical_data.study_abc123.ae
   ALTER COLUMN aeterm SET TAGS ('sdtm_role' = 'topic');
 ALTER TABLE clinical_data.study_abc123.ae
-  ALTER COLUMN aesev SET TAGS ('sdtm_role' = 'qualifier');
+  ALTER COLUMN aesev SET TAGS ('sdtm_role' = 'record_qualifier');
 ALTER TABLE clinical_data.study_abc123.ae
   ALTER COLUMN aestdtc SET TAGS ('sdtm_role' = 'timing');
 ```
@@ -138,7 +140,9 @@ ALTER TABLE clinical_data.study_abc123.dm
 
 ---
 
-## Complete Example: DM Domain
+## Example: DM Domain (Key Variables)
+
+This example shows the most commonly used DM variables (20 of 32 in SDTMIG v3.4). Consult `references/domains/DM.md` for the full variable list when building production schemas.
 
 ```sql
 CREATE TABLE IF NOT EXISTS clinical_data.study_abc123.dm (
