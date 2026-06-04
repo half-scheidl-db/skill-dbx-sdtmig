@@ -18,11 +18,12 @@ C66790,ETHNIC,NOT REPORTED,Not reported
 C66790,ETHNIC,UNKNOWN,Unknown
 C66742,NY,N,No
 C66742,NY,Y,Yes
+C66742,NY,NA,Not applicable
+C66742,NY,U,Unknown
 C99079,EPOCH,SCREENING,Period for assessing eligibility
 C99079,EPOCH,RUN-IN,Period between screening and treatment for washout or stabilization
 C99079,EPOCH,TREATMENT,Period during which treatment is administered
 C99079,EPOCH,FOLLOW-UP,Period after treatment for observing outcomes
-C99079,EPOCH,NOT APPLICABLE,Not applicable
 C66767,ACN,DOSE NOT CHANGED,Dose of study treatment was not changed
 C66767,ACN,DOSE REDUCED,Dose of study treatment was reduced
 C66767,ACN,DOSE INCREASED,Dose of study treatment was increased
@@ -39,11 +40,6 @@ C66768,AEOUT,UNKNOWN,Outcome is unknown
 C66769,AESEV,MILD,Awareness of sign or symptom but easily tolerated
 C66769,AESEV,MODERATE,Discomfort enough to cause interference with usual activity
 C66769,AESEV,SEVERE,Incapacitating with inability to perform usual activities
-C66756,AEREL,NOT RELATED,No reasonable possibility of causal relationship
-C66756,AEREL,UNLIKELY RELATED,Doubtful causal relationship
-C66756,AEREL,POSSIBLY RELATED,Causal relationship cannot be ruled out
-C66756,AEREL,PROBABLY RELATED,Likely causal relationship
-C66756,AEREL,RELATED,Definite causal relationship
 C71148,POSITION,SITTING,Seated position
 C71148,POSITION,STANDING,Upright position
 C71148,POSITION,SUPINE,Lying face up

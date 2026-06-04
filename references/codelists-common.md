@@ -50,24 +50,14 @@ Ethnicity of the subject.
 
 ## NY (C66742)
 
-Yes/No response (no null allowed).
+Yes/No/Not Applicable/Unknown response.
 
 | Submission Value | Definition |
 |---|---|
 | N | No |
 | Y | Yes |
-
----
-
-## NYNULL (C66742 variant)
-
-Yes/No response (null allowed for not assessed).
-
-| Submission Value | Definition |
-|---|---|
-| N | No |
-| Y | Yes |
-| *(null)* | Not assessed or not applicable |
+| NA | Not applicable |
+| U | Unknown |
 
 ---
 
@@ -81,7 +71,6 @@ Trial epoch — a period of time in the planned conduct of a study.
 | RUN-IN | Period between screening and treatment for washout or stabilization |
 | TREATMENT | Period during which treatment is administered |
 | FOLLOW-UP | Period after treatment for observing outcomes |
-| NOT APPLICABLE | Not applicable |
 
 ---
 
@@ -125,20 +114,6 @@ Severity or intensity of the adverse event.
 | MILD | Awareness of sign or symptom but easily tolerated |
 | MODERATE | Discomfort enough to cause interference with usual activity |
 | SEVERE | Incapacitating with inability to perform usual activities |
-
----
-
-## AEREL (C66756)
-
-Causality — relationship of adverse event to study treatment.
-
-| Submission Value | Definition |
-|---|---|
-| NOT RELATED | No reasonable possibility of causal relationship |
-| UNLIKELY RELATED | Doubtful causal relationship |
-| POSSIBLY RELATED | Causal relationship cannot be ruled out |
-| PROBABLY RELATED | Likely causal relationship |
-| RELATED | Definite causal relationship |
 
 ---
 
