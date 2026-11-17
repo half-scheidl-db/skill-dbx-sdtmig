@@ -23,6 +23,8 @@
 --   * TS indication falls back to TDIGRP when INDIC is absent.
 --   * TS/TV: removed table_fetched_timestamp (pipeline audit column, not SDTM).
 --   * Fixed copy-paste comments and the AE outcome / race metadata.
+--   * VS change-from-baseline: per-subject CHG/BASE computed in the source query instead of experimental window
+--     measures (which returned NaN when grouped by arm + visit and were a difference of group means).
 --   * CM conmed_per_subject = records per subject (as originally documented; was distinct meds / subjects).
 --   * TS intervention lists all TRT values (was MAX of one); TV visits_list orders by VISITNUM (VISITDY is null
 --     for event-driven visits such as end of treatment).
@@ -2191,7 +2193,11 @@ source: |-
     VSSTRESN - LAG(VSSTRESN) OVER (
       PARTITION BY USUBJID, VSTESTCD
       ORDER BY VISITNUM
-    ) AS CFPV
+    ) AS CFPV,
+    MAX(CASE WHEN VSLOBXFL = 'Y' THEN VSSTRESN END) OVER (PARTITION BY USUBJID, VSTESTCD) AS BASE,
+    CASE WHEN VSDTC > MAX(CASE WHEN VSLOBXFL = 'Y' THEN VSDTC END) OVER (PARTITION BY USUBJID, VSTESTCD)
+         THEN VSSTRESN - MAX(CASE WHEN VSLOBXFL = 'Y' THEN VSSTRESN END) OVER (PARTITION BY USUBJID, VSTESTCD)
+    END AS CHG
   FROM {{SDTM_SCHEMA}}.vs
 
 joins:
@@ -2647,13 +2653,9 @@ measures:
       - not performed count
 
   - name: change_from_baseline
-    expr: MEASURE(mean_standard_result) - MEASURE(baseline_mean_result)
-    window:
-      - order: visit_number
-        semiadditive: first
-        range: all
-    comment: "Mean result minus baseline mean result across subjects (a difference of group means, not a per-subject
-      change; subjects missing at later visits bias it)"
+    expr: AVG(source.CHG)
+    comment: "Mean per-subject change from baseline (post-baseline value minus the subject's own baseline,
+      VSLOBXFL = Y). Works with any grouping; use with visit_name/visit_number for change at each time point."
     display_name: Change from Baseline
     format:
       type: number
@@ -2667,12 +2669,8 @@ measures:
       - mean change from baseline
 
   - name: baseline_mean_across_visits
-    expr: AVG(source.VSSTRESN) FILTER (WHERE source.VSLOBXFL = 'Y')
-    window:
-      - order: visit_number
-        semiadditive: first
-        range: cumulative
-    comment: Baseline mean result made available at every visit level via a window, so it can be subtracted at each visit.
+    expr: AVG(source.BASE)
+    comment: Mean of the subjects' own baseline values, available at every visit (subjects observed in the group).
     display_name: Baseline Mean (All Visits)
     format:
       type: number
@@ -2681,9 +2679,9 @@ measures:
         places: 2
 
   - name: change_from_baseline_by_visit
-    expr: MEASURE(mean_standard_result) - MEASURE(baseline_mean_across_visits)
-    comment: "Change from baseline at each visit: visit mean result minus the baseline mean (difference of group means).
-      Use with visit_name or visit_number."
+    expr: AVG(source.CHG)
+    comment: "Change from baseline at each visit (mean of per-subject changes). Same as change_from_baseline;
+      kept for compatibility. Use with visit_name or visit_number."
     display_name: Change from Baseline (by Visit)
     format:
       type: number
