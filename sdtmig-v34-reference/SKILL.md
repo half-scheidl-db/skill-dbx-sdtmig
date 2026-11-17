@@ -33,6 +33,7 @@ A **reference skill** for SDTMIG v3.4 metadata. It gives you datasets, variables
    | Using `ai_query` for MedDRA coding, epoch checks, narrative extraction | `references/ai-query-templates.md` |
    | **Generating a coherent synthetic SDTM study** (from an NCT ID or trial design) | `references/synthetic-study-generation.md` **first**, then `references/ctgov-mapping.md` and `assets/study-spec-template.yaml` |
    | Checking an SDTM dataset for cross-domain consistency (dates, death, EPOCH, AE↔EX, ranges) | `references/coherence-rules.md` + `scripts/validate_sdtm.py` |
+   | Metric views / semantic layer (Genie, dashboards) over SDTM tables: AE, CM, DM, DS, LB, TS, TV, VS | `assets/metric-views/sdtm_metric_views.sql` (header lists required columns and caveats); deploy with `scripts/deploy_metric_views.py --sdtm <cat.schema> --target <cat.schema>` |
 
 2. **Don't read the CSV files whole.** `references/variables.csv` is ~430 KB and would fill the context window. Use it only from code (Spark/pandas) or filter it, for example `grep -E '^[^,]*,[0-9]+,[^,]*,AE,'`. The per-domain Markdown files hold the same content in small pieces.
 3. **Cross-domain questions** (e.g. "which domains use `--LOINC`?") are best answered by filtering `variables.csv` in code rather than opening many domain files.

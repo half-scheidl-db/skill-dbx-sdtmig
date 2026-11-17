@@ -21,10 +21,12 @@ skill-dbx-sdtmig/                 ← register this folder as a skills folder
 │   │   ├── ctgov-mapping.md
 │   │   └── coherence-rules.md
 │   ├── assets/study-spec-template.yaml
+│   ├── assets/metric-views/sdtm_metric_views.sql  ← 8 UC metric views (AE CM DM DS LB TS TV VS)
 │   └── scripts/
 │       ├── ctgov_to_spec.py      ← ClinicalTrials.gov record -> reviewed study spec
 │       ├── generate_sdtm.py      ← spec -> coherent fictional SDTM (CSV/parquet/UC)
-│       └── validate_sdtm.py      ← 55 cross-domain coherence rules
+│       ├── validate_sdtm.py      ← 55 cross-domain coherence rules
+│       └── deploy_metric_views.py ← render + create the metric views
 └── source/                       ← original workbook + raw extract (not loaded by agents)
 ```
 

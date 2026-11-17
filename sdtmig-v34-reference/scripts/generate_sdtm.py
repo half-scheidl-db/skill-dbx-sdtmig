@@ -940,10 +940,24 @@ EXPECTED_NULL = {  # Core=Exp variables we cannot populate truthfully -> present
     "AE": ["AELLT", "AELLTCD", "AEPTCD", "AEHLT", "AEHLTCD", "AEHLGT", "AEHLGTCD", "AEBDSYCD", "AESOCCD"],
     "DM": ["ACTARMUD"], "TS": ["TSVALCD", "TSVCDREF", "TSVCDVER"], "TV": ["ARMCD"],
 }  # MedDRA codes need a licensed dictionary; TV visits apply to all arms
+PERMISSIBLE_NULL = {  # Perm variables that downstream models (e.g. metric views) commonly reference
+    "LB": ["LBSTAT", "LBTPT"], "VS": ["VSCAT", "VSSTAT", "VSDRVFL", "VSTPT"], "TS": ["TSGRPID"], "TV": ["ARM"],
+}  # null = test done / no time point / not derived / no grouping / visit applies to all arms
+CM_CLASS = {  # ATC level-4 class names for the built-in medication list (illustrative, not WHODrug-coded)
+    "AMLODIPINE": "DIHYDROPYRIDINE DERIVATIVES", "ATORVASTATIN": "HMG COA REDUCTASE INHIBITORS",
+    "METFORMIN": "BIGUANIDES", "OMEPRAZOLE": "PROTON PUMP INHIBITORS", "PARACETAMOL": "ANILIDES",
+    "LEVOTHYROXINE": "THYROID HORMONES", "SERTRALINE": "SELECTIVE SEROTONIN REUPTAKE INHIBITORS",
+    "SALBUTAMOL": "SELECTIVE BETA-2-ADRENORECEPTOR AGONISTS", "ONDANSETRON": "SEROTONIN (5HT3) ANTAGONISTS",
+    "LOPERAMIDE": "ANTIPROPULSIVES", "HYDROCORTISONE": "CORTICOSTEROIDS, WEAK (GROUP I)",
+    "MUPIROCIN": "OTHER ANTIBIOTICS FOR TOPICAL USE", "AMOXICILLIN": "PENICILLINS WITH EXTENDED SPECTRUM",
+    "MACROGOL": "OSMOTICALLY ACTING LAXATIVES", "ZOLPIDEM": "BENZODIAZEPINE RELATED DRUGS",
+}
 
 
 def order_columns(domains):
-    for dom, cols in EXPECTED_NULL.items():
+    if "CM" in domains:
+        domains["CM"]["CMCLAS"] = domains["CM"]["CMDECOD"].map(CM_CLASS)
+    for dom, cols in {**EXPECTED_NULL, **{k: EXPECTED_NULL.get(k, []) + v for k, v in PERMISSIBLE_NULL.items()}}.items():
         if dom in domains:
             for c in cols:
                 if c not in domains[dom]:
@@ -1009,7 +1023,7 @@ def typed(df: pd.DataFrame, types: dict[str, str]) -> pd.DataFrame:
     return df
 
 
-def write(domains, out: Path | None, uc: str | None, spec: dict):
+def write(domains, out: Path | None, uc: str | None, spec: dict, spark=None):
     """Write CSV/parquet and/or Unity Catalog Delta tables.
 
     UC tables are POOLED across studies (one table per domain, rows identified by STUDYID).
@@ -1027,17 +1041,17 @@ def write(domains, out: Path | None, uc: str | None, spec: dict):
             except ImportError:
                 pass
     if uc:
-        from pyspark.sql import SparkSession, types as T
-        spark = SparkSession.builder.getOrCreate()
+        from pyspark.sql import types as T
+        if spark is None:  # in a notebook/job the active session; locally pass a DatabricksSession
+            from pyspark.sql import SparkSession
+            spark = SparkSession.builder.getOrCreate()
         st = {"string": T.StringType(), "int": T.LongType(), "double": T.DoubleType()}
         assert "'" not in sid
         for dom, df in domains.items():
             name = f"{uc}.{dom.lower()}"
             tdf = typed(df, types[dom])
             schema = T.StructType([T.StructField(c, st[types[dom][c]], True) for c in tdf.columns])
-            rows = [tuple(None if pd.isna(v) else (int(v) if types[dom][c] == "int" else v)
-                          for c, v in zip(tdf.columns, r)) for r in tdf.itertuples(index=False)]
-            sdf = spark.createDataFrame(rows, schema)
+            sdf = spark.createDataFrame(tdf, schema)
             if spark.catalog.tableExists(name):
                 (sdf.write.format("delta").mode("overwrite").option("replaceWhere", f"STUDYID = '{sid}'")
                  .option("mergeSchema", "true").saveAsTable(name))
