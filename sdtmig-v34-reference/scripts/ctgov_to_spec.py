@@ -105,7 +105,12 @@ def _best_match(title: str, candidates: list[str]) -> int:
     """Index of the candidate most similar to title (registry groups vs arm labels)."""
     norm = lambda s: re.sub(r"^(experimental|active comparator|placebo comparator|"
                             r"no intervention|sham comparator|other):\s*", "", s.lower())
-    scores = [difflib.SequenceMatcher(None, norm(title), norm(c)).ratio() for c in candidates]
+    nt = norm(title)
+    # "Placebo to Drug X" belongs to the arm labelled "Placebo": prefer labels the title starts with
+    prefix = [i for i, c in enumerate(candidates) if norm(c) and nt.startswith(norm(c))]
+    if prefix:
+        return max(prefix, key=lambda i: len(norm(candidates[i])))
+    scores = [difflib.SequenceMatcher(None, nt, norm(c)).ratio() for c in candidates]
     return max(range(len(scores)), key=scores.__getitem__)
 
 
@@ -202,6 +207,10 @@ def draft_spec(rec: dict) -> dict:
                 if "total" in g["title"].lower():
                     continue
                 started[_best_match(g["title"], labels)] += int(a["numSubjects"])
+    if flow and len(flow.get("periods", [])) > 1:
+        review.append("design has %d periods (%s): the generator models ONE treatment element per arm; "
+                      "crossover / re-randomization after period 1 is not represented"
+                      % (len(flow["periods"]), "; ".join(pp["title"] for pp in flow["periods"])))
     ratio = _small_int_ratio(started) if started and min(started) > 0 else [1] * len(arm_groups)
     if not started:
         review.append("arms[].ratio defaults to 1:1 (no participant flow posted)")

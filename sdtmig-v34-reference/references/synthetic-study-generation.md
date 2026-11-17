@@ -78,6 +78,7 @@ An NCT ID is enough to start. Everything else gets a default that is listed unde
 - CMDECOD is the generic name and isn't WHODrug-coded.
 - Complex regimens (loading doses, weight-based dosing, split first infusions) are reduced to a single dose and frequency per intervention.
 - Efficacy findings beyond overall response (RS) aren't modelled yet: no TU/TR, QS scales or PK.
+- **One treatment element per arm.** Placebo crossover, randomized withdrawal and re-randomization (e.g. ICONIC-LEAD's week-16 crossover) are not represented; the drafter flags multi-period designs under `review:`. Model only period 1, or extend TA/TE and `_elements()`.
 - Subjects ongoing at the cutoff have no end-of-study DS record, and RFENDTC/RFPENDTC equal their last contact.
 
 ## Running in Databricks / Genie Code
