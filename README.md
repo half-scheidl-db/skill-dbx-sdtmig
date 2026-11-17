@@ -1,40 +1,47 @@
-# **SDTM Skill**
+# SDTMIG v3.4 skill for Databricks
 
-A focused skill for working with **SDTM** structures, concepts, and modeling implications in clinical trial data discussions.
+An [Agent Skill](https://agentskills.io) that gives coding agents, such as Genie Code, Genie Code CLI and Claude Code, a fast reference to **CDISC SDTMIG v3.4 metadata**: datasets, variables, roles, core status and common controlled terminology. It also includes a CDISC Therapeutic Area User Guide index and SDTM-specific Databricks patterns for Unity Catalog tables, Lakeflow pipelines and `ai_query`.
 
-## **Purpose**
+## Repository layout
 
-This skill helps interpret **SDTM** and translate it into practical design guidance for data modeling, analytics, and semantic-layer discussions.
+```
+skill-dbx-sdtmig/                 ← register this folder as a skills folder
+├── sdtmig-v34-reference/         ← the skill (folder name == skill name)
+│   ├── SKILL.md
+│   └── references/
+│       ├── datasets.md / .csv
+│       ├── domains/{DOMAIN}.md   ← one file per domain (63)
+│       ├── variables.csv         ← machine-readable, for code only (~430 KB)
+│       ├── codelists-common.md / .csv
+│       ├── workbook-readme.md
+│       ├── cdisc_therapeutic_areas.md
+│       ├── databricks-patterns.md
+│       └── ai-query-templates.md
+└── source/                       ← original workbook + raw extract (not loaded by agents)
+```
 
-Typical use cases include:
+The skill lives in a subfolder, so the repo root can be registered directly as a skills folder.
 
-* explaining SDTM concepts in plain language  
-* clarifying the meaning of domains, records, and grain  
-* relating SDTM structures to reporting and analytics design  
-* helping shape semantic layers, metric views, and architecture discussions  
-* supporting slide content and design narratives
+## Install
 
-## **Scope**
+**Genie Code (workspace)**
+1. Add this repo as a Databricks Git folder, e.g. `/Users/<you>/skill-dbx-sdtmig`.
+2. In the Genie Code pane open **Settings → skills**, enter the Git folder path and click **Add folder**. Register the repo root, not `sdtmig-v34-reference/`.
+3. Start a new chat. The skill loads automatically for SDTM questions, or you can `@sdtmig-v34-reference` it.
 
-This skill is intended for:
+Alternatively, copy `sdtmig-v34-reference/` into `Workspace/.assistant/skills/` (workspace skill) or `/Users/<you>/.assistant/skills/` (user skill).
 
-* SDTM specialists  
-* clinical data architects  
-* pharma analytics teams  
-* platform teams implementing trial data models
+**Genie Code CLI**: copy or symlink `sdtmig-v34-reference/` into `~/.genie/skills/`, or into `.agents/skills/` of a project repo.
 
-It is especially useful when the audience is strong in **pharma standards** and needs help bridging that mindset into modern platform design.
+**Claude Code**: copy or symlink `sdtmig-v34-reference/` into `~/.claude/skills/` or `.claude/skills/`.
 
-## **Output style**
+## Scope and limitations
 
-The skill should be:
+- Workbook **metadata only**, not the SDTMIG prose (assumptions, examples).
+- SDTMIG v3.4 only; SEND, ADaM, CDASH and other IG versions are out of scope.
+- The TAUG file is an index; full TAUGs are available from CDISC.
+- `ai_query` outputs (e.g. MedDRA suggestions) are aids for humans, not coded submission values.
 
-* precise  
-* standards-aware  
-* practical  
-* concise  
-* suitable for both technical and stakeholder-facing communication
+## Source and licensing
 
-## **Notes**
-
-This repository contains the skill definition and supporting materials for **SDTM-focused reasoning and communication**.
+The metadata is derived from the CDISC SDTMIG v3.4 metadata workbook (`source/SDTMIG_v3.4.xlsx`). CDISC standards are subject to the [CDISC IP policy and terms of use](https://www.cdisc.org/). Confirm that redistributing the workbook and derived metadata is permitted before sharing this repository publicly.

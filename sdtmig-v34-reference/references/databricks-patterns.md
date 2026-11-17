@@ -38,41 +38,41 @@ TBLPROPERTIES (
 
 ---
 
-## 2. DLT Medallion Pipeline for SDTM ETL
+## 2. Lakeflow Declarative Pipeline (medallion) for SDTM ETL
+
+Uses the current `pyspark.pipelines` API (`dp`). Older `import dlt` code still runs, but don't use it for new code.
 
 ```python
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql import functions as F
 
-# --- Bronze: Raw ingestion (1:1 from source XPT/CSV) ---
+RAW = "/Volumes/clinical_data/raw/study_abc123/ae/"   # one folder per domain
 
-@dlt.table(
-    name="ae_bronze",
-    comment="Raw adverse events ingested from source XPT files"
-)
+# --- Bronze: incremental raw ingestion with Auto Loader ---
+
+@dp.table(name="ae_bronze", comment="Raw adverse events as delivered (CSV extracts)")
 def ae_bronze():
     return (
-        spark.read.format("csv")
+        spark.readStream.format("cloudFiles")
+        .option("cloudFiles.format", "csv")
         .option("header", True)
-        .load("/Volumes/clinical_data/raw/study_abc123/ae.*")
+        .load(RAW)
+        .withColumn("_source_file", F.col("_metadata.file_path"))
     )
 
 
 # --- Silver: SDTM-conformed and validated ---
 
-@dlt.table(
-    name="ae_silver",
-    comment="SDTM-conformed adverse events with standard types and validation"
-)
-@dlt.expect_or_drop("valid_studyid", "studyid IS NOT NULL")
-@dlt.expect_or_drop("valid_usubjid", "usubjid IS NOT NULL")
-@dlt.expect_or_drop("valid_aeseq", "aeseq IS NOT NULL")
-@dlt.expect_or_drop("valid_aeterm", "aeterm IS NOT NULL")
-@dlt.expect("valid_severity", "aesev IN ('MILD', 'MODERATE', 'SEVERE') OR aesev IS NULL")
-@dlt.expect("valid_serious", "aeser IN ('Y', 'N') OR aeser IS NULL")
+@dp.table(name="ae_silver", comment="SDTM-conformed adverse events")
+@dp.expect_or_drop("valid_studyid", "studyid IS NOT NULL")
+@dp.expect_or_drop("valid_usubjid", "usubjid IS NOT NULL")
+@dp.expect_or_drop("valid_aeseq", "aeseq IS NOT NULL")
+@dp.expect_or_drop("valid_aeterm", "aeterm IS NOT NULL")
+@dp.expect("valid_severity", "aesev IN ('MILD', 'MODERATE', 'SEVERE') OR aesev IS NULL")
+@dp.expect("valid_serious", "aeser IN ('Y', 'N') OR aeser IS NULL")
 def ae_silver():
     return (
-        dlt.read("ae_bronze")
+        spark.readStream.table("ae_bronze")
         .withColumn("domain", F.lit("AE"))
         .withColumn("aeseq", F.col("aeseq").cast("int"))
         .withColumn("aedy", F.col("aedy").cast("int"))
@@ -86,51 +86,51 @@ def ae_silver():
     )
 
 
-# --- Gold: Analysis-ready (ADaM-style) ---
+# --- Gold: analysis-ready (ADaM-style) ---
 
-@dlt.table(
-    name="adae",
-    comment="Analysis dataset for adverse events (ADaM ADAE equivalent)"
-)
+@dp.materialized_view(name="adae", comment="Analysis dataset for adverse events (ADaM ADAE-like)")
 def adae():
-    dm = dlt.read("dm_silver")
-    ae = dlt.read("ae_silver")
+    dm = spark.read.table("dm_silver")
+    ae = spark.read.table("ae_silver")
     return (
         ae.join(dm.select("usubjid", "arm", "rfstdtc"), on="usubjid", how="left")
-        .withColumn("astdt", F.to_date(F.col("aestdtc")))
-        .withColumn("aendt", F.to_date(F.col("aeendtc")))
-        .withColumn("trtemfl", F.when(F.col("astdt") >= F.to_date(F.col("rfstdtc")), "Y"))
+        .withColumn("astdt", F.to_date(F.substring("aestdtc", 1, 10)))
+        .withColumn("aendt", F.to_date(F.substring("aeendtc", 1, 10)))
+        .withColumn("trtemfl", F.when(F.col("astdt") >= F.to_date(F.substring("rfstdtc", 1, 10)), "Y"))
     )
 ```
+
+> ISO 8601 `--DTC` values can be partial (`2024-03`) or carry a time (`2024-03-05T10:30`). Take the date part before casting, and decide explicitly how to impute partial dates.
 
 ---
 
 ## 3. Data Quality Expectations from SDTM Core
 
-Map SDTM Core="Req" to DLT expectations for any domain:
+Derive the Core=Req rules from the workbook metadata (`references/variables.csv`, uploaded next to the pipeline code or to a Volume) so they never drift from the standard:
 
 ```python
-import dlt
+import csv
+from pyspark import pipelines as dp
 
-DOMAIN_REQUIRED_VARS = {
-    "AE": ["studyid", "domain", "usubjid", "aeseq", "aeterm", "aedecod"],
-    "DM": ["studyid", "domain", "usubjid", "subjid", "siteid", "sex", "country"],
-    "LB": ["studyid", "domain", "usubjid", "lbseq", "lbtestcd", "lbtest"],
-    "VS": ["studyid", "domain", "usubjid", "vsseq", "vstestcd", "vstest"],
-    "EX": ["studyid", "domain", "usubjid", "exseq", "extrt"],
-}
+VARIABLES_CSV = "/Volumes/clinical_data/reference/sdtmig/variables.csv"
+
+def required_vars(domain: str) -> list[str]:
+    with open(VARIABLES_CSV, newline="") as f:
+        return [r["Variable Name"].lower() for r in csv.DictReader(f)
+                if r["Dataset Name"] == domain.upper() and r["Core"] == "Req"]
 
 def build_expectations(domain: str) -> dict:
-    """Generate DLT expectation dict from SDTM Core=Req variables."""
-    req_vars = DOMAIN_REQUIRED_VARS.get(domain.upper(), [])
-    return {f"req_{var}": f"{var} IS NOT NULL" for var in req_vars}
+    """Core=Req -> NOT NULL expectations. Exp/Perm are not null-checked."""
+    return {f"req_{v}": f"{v} IS NOT NULL" for v in required_vars(domain)}
 
 
-@dlt.table(name="lb_silver")
-@dlt.expect_all_or_drop(build_expectations("LB"))
+@dp.table(name="lb_silver")
+@dp.expect_all_or_drop(build_expectations("LB"))
 def lb_silver():
-    return dlt.read("lb_bronze").select(...)
+    return spark.readStream.table("lb_bronze").select(...)
 ```
+
+`Req` = must be present and non-null. `Exp` = column must exist, nulls allowed. `Perm` = include when collected. Use `expect` (warn) rather than `expect_or_drop` if dropped rows would hide data-quality problems from data managers.
 
 ---
 

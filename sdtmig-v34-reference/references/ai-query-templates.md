@@ -2,6 +2,12 @@
 
 Ready-to-use Databricks SQL examples using `ai_query()` for clinical data tasks against SDTM structures.
 
+> **Endpoint:** replace `'<chat-endpoint>'` with a chat foundation model endpoint that is available in the workspace (Serving page or `databricks serving-endpoints list`). Don't hard-code model names in reusable code, because endpoints get renamed and retired.
+>
+> **Structured output:** prefer `responseFormat => 'STRUCT<...>'` (Databricks Runtime 15.4 LTS+, chat models only) over asking for JSON in the prompt. The model output is then constrained to the schema, and `from_json()` parses it reliably.
+>
+> **Determinism:** pass `modelParameters => named_struct('temperature', 0.0)` for coding and validation tasks.
+
 ---
 
 ## 1. MedDRA Classification
@@ -11,30 +17,35 @@ Map free-text adverse event terms (AETERM) to MedDRA Preferred Terms and System 
 ```sql
 SELECT
   usubjid,
+  aeseq,
   aeterm,
-  ai_query(
-    'databricks-meta-llama-3-3-70b-instruct',
-    CONCAT(
-      'You are a medical coding specialist. Classify this adverse event term into MedDRA terminology. ',
-      'Return ONLY a JSON object with these fields: ',
-      '{"preferred_term": "...", "system_organ_class": "...", "llt": "..."}. ',
-      'Use standard MedDRA preferred terms. Do not explain.\n\n',
-      'Adverse event verbatim term: ', aeterm
-    )
-  ) AS meddra_json
+  from_json(
+    ai_query(
+      '<chat-endpoint>',
+      CONCAT(
+        'You are a medical coding specialist. Suggest MedDRA coding for this adverse event verbatim term. ',
+        'Use standard MedDRA Preferred Terms and System Organ Classes.\n\n',
+        'Adverse event verbatim term: ', aeterm
+      ),
+      responseFormat => 'STRUCT<meddra:STRUCT<preferred_term:STRING, system_organ_class:STRING, llt:STRING>>',
+      modelParameters => named_struct('temperature', 0.0)
+    ),
+    'preferred_term STRING, system_organ_class STRING, llt STRING'
+  ) AS meddra_suggestion
 FROM clinical_data.study_abc123.ae
 WHERE aedecod IS NULL OR aebodsys IS NULL
 ```
 
+> **Regulatory caveat:** an LLM isn't a MedDRA coder. Use this output only as a *suggestion* for a human coder, or to pre-filter a dictionary lookup. AEDECOD/AEBODSYS submitted to regulators must come from the licensed MedDRA version in use. Store the suggestion in a separate column, never directly in AEDECOD.
+
 **Input:** Rows from the AE domain where dictionary coding is incomplete.
 
-**Output:** JSON string with `preferred_term` (maps to AEDECOD), `system_organ_class` (maps to AEBODSYS), and `llt` (lowest level term).
+**Output:** STRUCT with `preferred_term` (maps to AEDECOD), `system_organ_class` (maps to AEBODSYS), and `llt` (lowest level term).
 
 **Notes:**
-- Parse the JSON output with `from_json()` or `get_json_object()` to extract fields
 - Always validate results against the actual MedDRA dictionary before submission use
 - Consider batching with `LIMIT` for large datasets to manage cost
-- Model choice: use a larger model (70B+) for medical terminology accuracy
+- Model choice: prefer the most capable chat endpoint available; terminology accuracy varies a lot between models
 
 ---
 
@@ -53,7 +64,7 @@ WITH epoch_checks AS (
     se.sestdtc AS epoch_start,
     se.seendtc AS epoch_end,
     ai_query(
-      'databricks-meta-llama-3-3-70b-instruct',
+      '<chat-endpoint>',
       CONCAT(
         'You are a clinical data reviewer checking SDTM epoch assignments. ',
         'In a typical clinical trial, epochs occur in this order: SCREENING, RUN-IN, TREATMENT, FOLLOW-UP. ',
@@ -96,7 +107,7 @@ Generate SDTM-compliant test records for a specified domain.
 ```sql
 SELECT
   ai_query(
-    'databricks-meta-llama-3-3-70b-instruct',
+    '<chat-endpoint>',
     CONCAT(
       'Generate 10 realistic SDTM Adverse Events (AE) domain records for a Phase III oncology trial. ',
       'Study ID: "ONCO-2024-001". Subject IDs: "ONCO-2024-001-001" through "ONCO-2024-001-005" (2 events each). ',
@@ -170,7 +181,7 @@ SELECT
   patient_id,
   narrative_text,
   ai_query(
-    'databricks-meta-llama-3-3-70b-instruct',
+    '<chat-endpoint>',
     CONCAT(
       'You are a clinical data abstraction specialist. Extract SDTM Adverse Event (AE) domain fields ',
       'from this clinical narrative. If a field cannot be determined, use null.\n\n',
@@ -210,7 +221,7 @@ WHERE narrative_text IS NOT NULL
 ### Prompt Engineering for Clinical Data
 
 1. **Specify controlled terminology** — include valid values (e.g., "MILD | MODERATE | SEVERE") in the prompt so the model constrains output to SDTM-compliant terms
-2. **Request structured output** — always ask for JSON to enable downstream parsing with `from_json()` / `get_json_object()`
+2. **Request structured output** — use `responseFormat` with a STRUCT or JSON schema instead of prompt-only JSON instructions
 3. **Include domain context** — reference the specific SDTM domain and version for accuracy
 4. **Set role context** — prefix prompts with a role ("You are a medical coding specialist") for better domain adherence
 
@@ -219,7 +230,7 @@ WHERE narrative_text IS NOT NULL
 - **Batch processing:** Use `LIMIT` and windowing for large tables to manage cost and latency
 - **Validation layer:** Always validate ai_query outputs against controlled terminology before writing to curated tables
 - **Human review:** LLM outputs for clinical data should be reviewed by domain experts before regulatory use
-- **Determinism:** Set temperature to 0 (if supported) for consistent coding results
+- **Determinism:** `modelParameters => named_struct('temperature', 0.0)` for consistent coding results
 - **Audit trail:** Store both the raw LLM output and the final validated value for traceability
 
 ### Cost Management
