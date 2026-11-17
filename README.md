@@ -8,15 +8,23 @@ An [Agent Skill](https://agentskills.io) that gives coding agents, such as Genie
 skill-dbx-sdtmig/                 ← register this folder as a skills folder
 ├── sdtmig-v34-reference/         ← the skill (folder name == skill name)
 │   ├── SKILL.md
-│   └── references/
-│       ├── datasets.md / .csv
-│       ├── domains/{DOMAIN}.md   ← one file per domain (63)
-│       ├── variables.csv         ← machine-readable, for code only (~430 KB)
-│       ├── codelists-common.md / .csv
-│       ├── workbook-readme.md
-│       ├── cdisc_therapeutic_areas.md
-│       ├── databricks-patterns.md
-│       └── ai-query-templates.md
+│   ├── references/
+│   │   ├── datasets.md / .csv
+│   │   ├── domains/{DOMAIN}.md   ← one file per domain (63)
+│   │   ├── variables.csv         ← machine-readable, for code only (~430 KB)
+│   │   ├── codelists-common.md / .csv
+│   │   ├── workbook-readme.md
+│   │   ├── cdisc_therapeutic_areas.md
+│   │   ├── databricks-patterns.md
+│   │   ├── ai-query-templates.md
+│   │   ├── synthetic-study-generation.md  ← workflow: NCT ID -> spec -> SDTM -> validation
+│   │   ├── ctgov-mapping.md
+│   │   └── coherence-rules.md
+│   ├── assets/study-spec-template.yaml
+│   └── scripts/
+│       ├── ctgov_to_spec.py      ← ClinicalTrials.gov record -> reviewed study spec
+│       ├── generate_sdtm.py      ← spec -> coherent fictional SDTM (CSV/parquet/UC)
+│       └── validate_sdtm.py      ← 55 cross-domain coherence rules
 └── source/                       ← original workbook + raw extract (not loaded by agents)
 ```
 
@@ -34,6 +42,17 @@ Alternatively, copy `sdtmig-v34-reference/` into `Workspace/.assistant/skills/` 
 **Genie Code CLI**: copy or symlink `sdtmig-v34-reference/` into `~/.genie/skills/`, or into `.agents/skills/` of a project repo.
 
 **Claude Code**: copy or symlink `sdtmig-v34-reference/` into `~/.claude/skills/` or `.claude/skills/`.
+
+## Synthetic SDTM in three commands
+
+```bash
+cd sdtmig-v34-reference/scripts
+python ctgov_to_spec.py NCT04487080 --out-dir ../../study      # draft spec; review the `review:` list
+python generate_sdtm.py ../../study/NCT04487080_spec.yaml --out ../../study/sdtm
+python validate_sdtm.py ../../study/sdtm                       # 0 errors expected
+```
+
+Requires `pandas`, `numpy` and `pyyaml`. Output is fictional by design (`SYN-` STUDYID, `[SYNTHETIC]` title).
 
 ## Scope and limitations
 

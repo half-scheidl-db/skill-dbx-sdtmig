@@ -1,16 +1,16 @@
 ---
 name: sdtmig-v34-reference
-description: Use this skill for SDTMIG v3.4 domain, dataset, variable, role, core, or codelist lookups, or when mapping clinical trial data into SDTM-compliant structures on Databricks. Also use for CDISC Therapeutic Area User Guide (TAUG) coverage queries. Covers ai_query and synthetic data patterns only when the context is SDTM or clinical trial data.
+description: Use this skill for SDTMIG v3.4 domain, dataset, variable, role, core, or codelist lookups, when mapping clinical trial data into SDTM-compliant structures on Databricks, or when generating a coherent fictional SDTM dataset from ClinicalTrials.gov trial metadata (NCT ID). Also use for CDISC Therapeutic Area User Guide (TAUG) coverage queries and for validating cross-domain consistency of SDTM data. Covers ai_query patterns only when the context is SDTM or clinical trial data.
 license: Metadata derived from the CDISC SDTMIG v3.4 metadata workbook; subject to CDISC terms of use. Skill structure and instructions are original.
 metadata:
   source: CDISC SDTMIG v3.4 metadata workbook (SDTMIG_v3.4.xlsx)
   scope: SDTMIG v3.4 workbook metadata and CDISC Therapeutic Area index
-  version: "2.0"
+  version: "2.1"
 ---
 
 # SDTMIG v3.4 Reference Skill
 
-A **reference skill** for SDTMIG v3.4 metadata. It gives you datasets, variables, roles, core status, controlled terminology and the TAUG index. It also has SDTM-specific Databricks patterns. It doesn't process data.
+A **reference skill** for SDTMIG v3.4 metadata. It gives you datasets, variables, roles, core status, controlled terminology and the TAUG index, plus SDTM-specific Databricks patterns. It also has a **synthetic study generator**: scripts that turn a ClinicalTrials.gov record into a reviewed study spec and then into a coherent, validated, fictional SDTM dataset.
 
 ## What this skill contains (and what it doesn't)
 
@@ -30,7 +30,9 @@ A **reference skill** for SDTMIG v3.4 metadata. It gives you datasets, variables
    | Meaning of a workbook column (Core, Role, Value List…) | `references/workbook-readme.md` |
    | Which therapeutic areas have TAUGs and which standards they cover | `references/cdisc_therapeutic_areas.md` |
    | Building SDTM tables, pipelines, DQ expectations, XPT ingestion, synthetic data on Databricks | `references/databricks-patterns.md` |
-   | Using `ai_query` for MedDRA coding, epoch checks, synthetic records, narrative extraction | `references/ai-query-templates.md` |
+   | Using `ai_query` for MedDRA coding, epoch checks, narrative extraction | `references/ai-query-templates.md` |
+   | **Generating a coherent synthetic SDTM study** (from an NCT ID or trial design) | `references/synthetic-study-generation.md` **first**, then `references/ctgov-mapping.md` and `assets/study-spec-template.yaml` |
+   | Checking an SDTM dataset for cross-domain consistency (dates, death, EPOCH, AE↔EX, ranges) | `references/coherence-rules.md` + `scripts/validate_sdtm.py` |
 
 2. **Don't read the CSV files whole.** `references/variables.csv` is ~430 KB and would fill the context window. Use it only from code (Spark/pandas) or filter it, for example `grep -E '^[^,]*,[0-9]+,[^,]*,AE,'`. The per-domain Markdown files hold the same content in small pieces.
 3. **Cross-domain questions** (e.g. "which domains use `--LOINC`?") are best answered by filtering `variables.csv` in code rather than opening many domain files.
@@ -40,6 +42,14 @@ A **reference skill** for SDTMIG v3.4 metadata. It gives you datasets, variables
    - **Therapeutic area context**: from the TAUG index
    - **Implementation advice**: your own recommendation; label it as such
 5. **Platform questions:** treat the SDTM metadata as the stable semantic reference, then explain the Databricks design choice separately. For generic Databricks tasks (pipeline mechanics, dashboards, jobs), rely on the built-in Databricks skills. This skill adds only the SDTM-specific layer.
+
+## Synthetic data: non-negotiables
+
+When the user asks for synthetic or fictional SDTM data:
+1. **Spec first.** Run `scripts/ctgov_to_spec.py <NCT>` (or start from `assets/study-spec-template.yaml`), then review the `review:` items with the user. The schedule of activities, doses and treatment-stop reasons are the usual gaps.
+2. **Code generates, not the LLM.** Run `scripts/generate_sdtm.py`. Don't write SDTM rows in a prompt or with `ai_query`, because the domains won't agree with each other.
+3. **Validate.** Run `scripts/validate_sdtm.py` and repeat until there are 0 errors. Fix the spec or the generator, never the output rows.
+4. **Label it fictional.** STUDYID `SYN-…`, a `[SYNTHETIC]` title and a fictional sponsor, plus the `sdtm.synthetic=true` table property in UC. Never present the output as real trial data.
 
 ## Response pattern
 
@@ -65,6 +75,9 @@ Open `references/cdisc_therapeutic_areas.md`, go to the *Oncology* category tabl
 **Q: Generate DLT expectations from Core=Req for VS.**
 Use `references/databricks-patterns.md` §3. It derives the required variables from `variables.csv`, so the rules stay in sync with the workbook instead of a hand-maintained list.
 
+**Q: Create a full, coherent SDTM sample modelled on MARIPOSA (NCT04487080).**
+Follow `references/synthetic-study-generation.md`: draft the spec (it gets the 2:2:1 ratio, demographics, per-arm AE incidence and death rates from the posted results), confirm the visit template and doses with the user, generate, validate to 0 errors, and report what was assumed.
+
 ## Edge cases
 
 - **Non-standard variables** belong in SUPP-- datasets (`references/domains/SUPPQUAL.md`), not as extra columns in the parent domain.
@@ -73,7 +86,7 @@ Use `references/databricks-patterns.md` §3. It derives the required variables f
 - **Custom domains**: SDTMIG defines how to model them by class, but they aren't in this metadata. Say so, and base the model on the closest general-observation class.
 - **`--` prefix variables**: the domain files list concrete names (e.g. AESEQ). The generic `--SEQ` form is the domain prefix pattern.
 - **Other standards or versions** (SEND, SDTMIG v3.3/3.2, SDTM v2.x model, ADaM, CDASH): out of scope. Say the skill covers **SDTMIG v3.4 workbook metadata** only.
-- **Synthetic data**: the CDISC Library API serves standards metadata. It doesn't generate patient data. Use the TAUG index and domain metadata to scope prompts or generators (see `references/ai-query-templates.md` §3 and `references/databricks-patterns.md` §5).
+- **Synthetic data**: the CDISC Library API serves standards metadata. It doesn't generate patient data. Use the generator workflow above. The `ai_query` synthetic-record template and the PySpark AE generator in `databricks-patterns.md` §5 are quick single-domain demos and aren't coherent across domains.
 
 ## Cautions
 
