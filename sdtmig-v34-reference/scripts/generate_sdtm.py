@@ -975,26 +975,79 @@ def generate(spec: dict, n: int | None = None) -> dict[str, pd.DataFrame]:
     return order_columns(out)
 
 
+INT_SUFFIXES = ("SEQ", "DY", "TAETORD")  # SDTM Num variables that are always whole numbers
+
+
+def sdtm_types(domains) -> dict[str, dict[str, str]]:
+    """Column -> 'string' | 'int' | 'double', from the SDTMIG Type (Char/Num) in variables.csv."""
+    num = {}
+    if VARIABLES_CSV.exists():
+        with open(VARIABLES_CSV, newline="") as f:
+            for r in csv.DictReader(f):
+                num[(r["Dataset Name"], r["Variable Name"])] = r["Type"] == "Num"
+    out = {}
+    for dom, df in domains.items():
+        out[dom] = {}
+        for c in df.columns:
+            is_num = num.get((dom, c), pd.api.types.is_numeric_dtype(df[c]) and df[c].notna().any())
+            out[dom][c] = ("int" if c.endswith(INT_SUFFIXES) or c == "AGE" else "double") if is_num else "string"
+    return out
+
+
+def typed(df: pd.DataFrame, types: dict[str, str]) -> pd.DataFrame:
+    """Explicit dtypes so all-null columns don't become NULL/void columns in parquet or Delta."""
+    df = df.copy()
+    for c, t in types.items():
+        if t == "int":
+            df[c] = pd.to_numeric(df[c], errors="coerce").round().astype("Int64")
+        elif t == "double":
+            df[c] = pd.to_numeric(df[c], errors="coerce").astype("float64")
+        else:
+            df[c] = df[c].map(lambda v: None if v is None or (isinstance(v, float) and math.isnan(v))
+                              else (str(int(v)) if isinstance(v, float) and v.is_integer() else str(v))
+                              ).astype("string")
+    return df
+
+
 def write(domains, out: Path | None, uc: str | None, spec: dict):
+    """Write CSV/parquet and/or Unity Catalog Delta tables.
+
+    UC tables are POOLED across studies (one table per domain, rows identified by STUDYID).
+    Each run replaces only this study's rows (`replaceWhere STUDYID = ...`) and merges new
+    columns, so loading a second study never touches the first.
+    """
+    types = sdtm_types(domains)
+    sid = spec["study"]["studyid"]
     if out:
         out.mkdir(parents=True, exist_ok=True)
         for dom, df in domains.items():
             df.to_csv(out / f"{dom.lower()}.csv", index=False)
             try:
-                df.to_parquet(out / f"{dom.lower()}.parquet", index=False)
-            except Exception:
+                typed(df, types[dom]).to_parquet(out / f"{dom.lower()}.parquet", index=False)
+            except ImportError:
                 pass
     if uc:
-        from pyspark.sql import SparkSession
+        from pyspark.sql import SparkSession, types as T
         spark = SparkSession.builder.getOrCreate()
-        src = spec["study"].get("source_nct", "")
+        st = {"string": T.StringType(), "int": T.LongType(), "double": T.DoubleType()}
+        assert "'" not in sid
         for dom, df in domains.items():
             name = f"{uc}.{dom.lower()}"
-            sdf = spark.createDataFrame(df.astype(object).where(df.notna(), None))
-            sdf.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(name)
-            spark.sql(f"COMMENT ON TABLE {name} IS 'SYNTHETIC SDTMIG 3.4 {dom} - fictional data modelled on {src}'")
-            spark.sql(f"ALTER TABLE {name} SET TBLPROPERTIES ('sdtm.domain'='{dom}', 'sdtm.version'='3.4', "
-                      f"'sdtm.synthetic'='true', 'sdtm.source_registry_id'='{src}')")
+            tdf = typed(df, types[dom])
+            schema = T.StructType([T.StructField(c, st[types[dom][c]], True) for c in tdf.columns])
+            rows = [tuple(None if pd.isna(v) else (int(v) if types[dom][c] == "int" else v)
+                          for c, v in zip(tdf.columns, r)) for r in tdf.itertuples(index=False)]
+            sdf = spark.createDataFrame(rows, schema)
+            if spark.catalog.tableExists(name):
+                (sdf.write.format("delta").mode("overwrite").option("replaceWhere", f"STUDYID = '{sid}'")
+                 .option("mergeSchema", "true").saveAsTable(name))
+            else:
+                sdf.write.format("delta").saveAsTable(name)
+                spark.sql(f"COMMENT ON TABLE {name} IS 'SYNTHETIC SDTMIG 3.4 {dom} domain. Fictional data, "
+                          f"pooled across studies; filter by STUDYID.'")
+                spark.sql(f"ALTER TABLE {name} SET TBLPROPERTIES ('sdtm.domain'='{dom}', 'sdtm.version'='3.4', "
+                          f"'sdtm.synthetic'='true')")
+            print(f"  {name}: {len(df):,} rows for {sid}")
 
 
 def main(argv=None):
