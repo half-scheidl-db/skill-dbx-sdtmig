@@ -1,0 +1,105 @@
+# Study spec: the single source of truth for scripts/generate_sdtm.py.
+# Usually drafted by scripts/ctgov_to_spec.py from a ClinicalTrials.gov record, then reviewed.
+# This file is a complete, runnable example of a small fictional 2-arm, fixed-duration trial.
+spec_version: 1
+
+study:
+  studyid: SYN-EXAMPLE-001          # always fictional; ctgov_to_spec uses SYN-<NCT>
+  source_nct: null                  # registry ID the design is modelled on (TS REGID)
+  title: A Randomized, Double-blind, Placebo-controlled Study of Exampletinib in Moderate Plaque Psoriasis
+  acronym: EXAMPLE-1
+  phase: PHASE III TRIAL            # TS TPHASE (CDISC CT)
+  study_type: INTERVENTIONAL
+  randomized: true
+  blinding: DOUBLE BLIND            # OPEN LABEL | SINGLE BLIND | DOUBLE BLIND
+  intervention_model: PARALLEL
+  primary_purpose: TREATMENT
+  conditions: [Plaque Psoriasis]
+  therapeutic_area: OTHER           # ONCOLOGY switches on cycles, RECIST response (RS), CTCAE grades
+  study_start: "2023-01-15"
+  data_cutoff: "2024-12-31"         # nothing is generated after this date (TS DCUTDTC)
+  enrollment_period_days: 300       # consent dates are spread over this window
+  planned_treatment_days: 113       # null = open-ended (treat until event); number = fixed duration
+  follow_up_days: 30                # safety follow-up after last dose; AE collection window
+
+generation:
+  seed: 42                          # same spec + seed -> identical dataset
+  n_randomized: 120
+  domains: [TS, TA, TE, TV, TI, DM, IE, DS, SE, SV, EX, AE, MH, CM, VS, LB, EG]
+
+population:
+  age_min: 18
+  age_max: 75
+  age_mean: 45
+  age_sd: 12
+  sex: {F: 0.45, M: 0.55}           # proportions, any CDISC SEX values
+  race: {WHITE: 0.75, ASIAN: 0.12, BLACK OR AFRICAN AMERICAN: 0.08, MULTIPLE: 0.02, NOT REPORTED: 0.03}
+  ethnicity: {NOT HISPANIC OR LATINO: 0.88, HISPANIC OR LATINO: 0.1, NOT REPORTED: 0.02}
+
+sites:                              # COUNTRY = ISO 3166 alpha-3; weight = share of subjects
+  - {country: USA, weight: 50, n_sites: 6}
+  - {country: DEU, weight: 30, n_sites: 3}
+  - {country: POL, weight: 20, n_sites: 2}
+
+arms:                               # ratio drives permuted-block randomization
+  - armcd: A
+    arm: Exampletinib 200 mg
+    type: EXPERIMENTAL
+    ratio: 2
+    interventions:
+      - {name: EXAMPLETINIB, dose: 200, unit: mg, route: ORAL, dosfrm: TABLET, frequency: QD, every_days: 1}
+  - armcd: B
+    arm: Placebo
+    type: PLACEBO_COMPARATOR
+    ratio: 1
+    interventions:
+      - {name: PLACEBO, dose: 0, unit: mg, route: ORAL, dosfrm: TABLET, frequency: QD, every_days: 1}
+
+disposition:
+  screen_failure_rate: 0.2
+  randomized_not_treated: 0.01
+  death: {A: 0.0, B: 0.0}           # probability over the whole participation
+  study_withdrawal:                 # reason (CDISC NCOMPLT) -> probability, per arm
+    A: {WITHDRAWAL BY SUBJECT: 0.04, LOST TO FOLLOW-UP: 0.02}
+    B: {WITHDRAWAL BY SUBJECT: 0.05, LOST TO FOLLOW-UP: 0.02}
+  treatment_discontinuation:        # stops treatment, subject stays for follow-up
+    A: {LACK OF EFFICACY: 0.03, PHYSICIAN DECISION: 0.02}
+    B: {LACK OF EFFICACY: 0.12, PHYSICIAN DECISION: 0.02}
+  # "ADVERSE EVENT" withdrawals come from adverse_events (AEACN = DRUG WITHDRAWN); no need to list them
+
+adverse_events:
+  source_vocabulary: MedDRA-style terms (illustrative)
+  terms:                            # incidence = proportion of subjects with >= 1 event, per arm
+    - {term: Nasopharyngitis, bodsys: Infections and infestations, incidence: {A: 0.12, B: 0.10}, serious_fraction: {A: 0, B: 0}}
+    - {term: Headache, bodsys: Nervous system disorders, incidence: {A: 0.09, B: 0.06}, serious_fraction: {A: 0, B: 0}}
+    - {term: Diarrhoea, bodsys: Gastrointestinal disorders, incidence: {A: 0.07, B: 0.03}, serious_fraction: {A: 0.02, B: 0}}
+    - {term: Alanine aminotransferase increased, bodsys: Investigations, incidence: {A: 0.05, B: 0.01}, serious_fraction: {A: 0.05, B: 0}}
+    - {term: Neutropenia, bodsys: Blood and lymphatic system disorders, incidence: {A: 0.03, B: 0.0}, serious_fraction: {A: 0.1, B: 0}}
+
+medical_history:                    # indication(s); comorbidities are added from a built-in list
+  - {term: Psoriasis, bodsys: Skin and subcutaneous tissue disorders, prob: 1.0, indication: true}
+
+eligibility:                        # -> TI; screen failures get one IE record for a failed criterion
+  - {code: INCL01, cat: INCLUSION, text: "Diagnosis of plaque psoriasis for at least 6 months"}
+  - {code: INCL02, cat: INCLUSION, text: "PASI >= 12 and BSA >= 10% at screening and baseline"}
+  - {code: EXCL01, cat: EXCLUSION, text: "Active or latent tuberculosis"}
+  - {code: EXCL02, cat: EXCLUSION, text: "ALT or AST > 2 x ULN at screening"}
+
+visits:                             # the schedule of activities: replace with the protocol SoA when available
+  screening: {visit: SCREENING, day: -28, window: 28, assess: [VS, LB, EG]}
+  scheduled:                        # fixed-duration designs: explicit visits (day = planned study day)
+    - {visit: DAY 1, day: 1, window: 0, assess: [VS, LB, EG]}
+    - {visit: WEEK 2, day: 15, window: 3, assess: [VS, LB]}
+    - {visit: WEEK 4, day: 29, window: 3, assess: [VS, LB]}
+    - {visit: WEEK 8, day: 57, window: 5, assess: [VS, LB]}
+    - {visit: WEEK 12, day: 85, window: 5, assess: [VS, LB, EG]}
+    - {visit: WEEK 16, day: 113, window: 7, assess: [VS, LB, EG]}
+  # open-ended / oncology designs use a repeating block instead of `scheduled`:
+  # repeating: {pattern: "CYCLE {n} DAY 1", start_day: 1, interval_days: 28, max_repeats: 36,
+  #             window: 3, assess: [VS, LB], assess_every: {EG: 3}}
+  # response:  {assess: RS, first_day: 57, interval_days: 56, window: 7}   # RECIST every 8 weeks
+  end_of_treatment: {visit: END OF TREATMENT, offset_days: 7, assess: [VS, LB, EG]}
+  follow_up:
+    - {visit: SAFETY FOLLOW-UP, offset_days: 30, assess: [VS, LB]}
+
+review: []                          # ctgov_to_spec lists assumptions to confirm here
