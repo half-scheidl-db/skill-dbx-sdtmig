@@ -225,6 +225,7 @@ def trial_summary(spec, n_rand, cutoff) -> pd.DataFrame:
     has_pbo = any("PLACEBO" in i["name"] for a in arms for i in a["interventions"])
     rows = [
         ("TITLE", "Trial Title", f"[SYNTHETIC] {st['title']}"[:200]),
+        ("ACRONYM", "Trial Acronym", st.get("acronym")),
         ("REGID", "Registry Identifier", st.get("source_nct")),
         ("SPONSOR", "Clinical Study Sponsor", "FICTIONAL SPONSOR (synthetic data)"),
         ("TPHASE", "Trial Phase Classification", st["phase"]),
@@ -243,16 +244,22 @@ def trial_summary(spec, n_rand, cutoff) -> pd.DataFrame:
         ("LENGTH", "Trial Length", f"P{abs(spec['visits']['screening']['day']) + st['planned_treatment_days'] + int(st.get('follow_up_days', 30))}D"
          if st.get("planned_treatment_days") else None),
         ("DCUTDTC", "Data Cutoff Date", iso(cutoff)),
+        ("DCUTDESC", "Data Cutoff Description", "PRIMARY ANALYSIS" if st.get("study_end") is None else "FINAL ANALYSIS"),
+        ("SENDTC", "Study End Date", st.get("study_end")),
+        ("THERAREA", "Therapeutic Area", st.get("therapeutic_area_name")),
         ("SDTIGVER", "SDTM IG Version", "3.4"),
         ("SDTMVER", "SDTM Version", "2.0"),
     ]
     rows += [("TDIGRP", "Diagnosis Group", c) for c in st.get("conditions", [])[:3]]
+    rows += [("INDIC", "Trial Disease/Condition Indication", c) for c in st.get("conditions", [])[:3]]
+    rows += [("FCNTRY", "Planned Country of Investigational Sites", c)
+             for c in dict.fromkeys(s["country"] for s in spec.get("sites", []))]
     rows += [("TRT", "Investigational Therapy or Treatment", t) for t in trts]
     rows += [("COMPTRT", "Comparative Treatment Name", t) for t in comps]
     out, seq = [], {}
     for cd, name, val in rows:
-        if val is None and cd == "LENGTH":
-            continue  # open-ended (event-driven) trial
+        if val is None and cd in ("LENGTH", "SENDTC", "THERAREA", "ACRONYM"):
+            continue  # open-ended trial / study not yet ended / unknown area
         seq[cd] = seq.get(cd, 0) + 1
         out.append({"STUDYID": st["studyid"], "DOMAIN": "TS", "TSSEQ": seq[cd], "TSPARMCD": cd,
                     "TSPARM": name, "TSVAL": val, "TSVALNF": None if val else "NA"})

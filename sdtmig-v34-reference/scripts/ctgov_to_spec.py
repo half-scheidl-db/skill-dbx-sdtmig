@@ -71,6 +71,9 @@ COUNTRY_ISO3 = {
     "switzerland": "CHE", "taiwan": "TWN", "thailand": "THA", "turkey": "TUR", "türkiye": "TUR",
     "turkiye": "TUR", "ukraine": "UKR", "united kingdom": "GBR", "united states": "USA",
     "vietnam": "VNM", "viet nam": "VNM",
+    "turkey (türkiye)": "TUR", "türkiye (turkey)": "TUR", "georgia": "GEO", "bosnia and herzegovina": "BIH",
+    "slovenia": "SVN", "korea, south": "KOR", "puerto rico": "PRI", "belarus": "BLR", "moldova": "MDA",
+    "moldova, republic of": "MDA", "north macedonia": "MKD", "luxembourg": "LUX", "iceland": "ISL",
 }
 ONCOLOGY_HINTS = re.compile(r"cancer|carcinoma|tumou?r|lymphoma|leukemia|leukaemia|myeloma|"
                             r"melanoma|sarcoma|neoplasm|nsclc|glioma|blastoma", re.I)
@@ -166,6 +169,24 @@ def _week_days(outcomes: list[dict]) -> list[int]:
         for w in re.findall(r"[Ww]eek\s*(\d+)", o.get("timeFrame", "")):
             weeks.add(int(w))
     return sorted(w * 7 + 1 for w in weeks if 0 < w <= 260)
+
+
+TA_HINTS = [  # condition keyword -> TS THERAREA value
+    (r"myeloma|lymphoma|leuk", "HEMATOLOGY/ONCOLOGY"), (ONCOLOGY_HINTS.pattern, "ONCOLOGY"),
+    (r"psoria|arthritis|colitis|crohn|lupus|dermatitis|spondyl", "IMMUNOLOGY"),
+    (r"depress|schizo|bipolar|anxiety|insomnia", "PSYCHIATRY"),
+    (r"alzheimer|parkinson|stroke|epilep|sclerosis|myasthenia", "NEUROLOGY"),
+    (r"fibrillation|coronary|heart|thrombo|hypertension", "CARDIOVASCULAR"),
+    (r"diabet|obesity", "METABOLISM"), (r"hiv|hepatitis|covid|influenza|rsv", "INFECTIOUS DISEASES"),
+]
+
+
+def _therapeutic_area(conds, oncology):
+    text = " ".join(conds)
+    for pat, name in TA_HINTS:
+        if re.search(pat, text, re.I):
+            return name
+    return "ONCOLOGY" if oncology else None
 
 
 # ------------------------------------------------------------------- draft --
@@ -417,8 +438,11 @@ def draft_spec(rec: dict) -> dict:
             "primary_purpose": di.get("primaryPurpose", "TREATMENT"),
             "conditions": conds,
             "therapeutic_area": "ONCOLOGY" if oncology else "OTHER",
+            "therapeutic_area_name": _therapeutic_area(conds, oncology),  # TS THERAREA
             "study_start": start,
             "data_cutoff": cutoff,
+            "study_end": (status.get("completionDateStruct", {}).get("date")
+                          if status.get("completionDateStruct", {}).get("type") == "ACTUAL" else None),
             "enrollment_period_days": max(90, min(730, int(span * 0.6))),
             "planned_treatment_days": planned_treatment_days,
             "follow_up_days": 30,
