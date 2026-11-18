@@ -224,7 +224,7 @@ def trial_summary(spec, n_rand, cutoff) -> pd.DataFrame:
     sexpop = "BOTH" if len(pop["sex"]) > 1 else ("F" if "F" in pop["sex"] else "M")
     has_pbo = any("PLACEBO" in i["name"] for a in arms for i in a["interventions"])
     rows = [
-        ("TITLE", "Trial Title", f"[SYNTHETIC] {st['title']}"[:200]),
+        ("TITLE", "Trial Title", f"[SYNTHETIC] {st['title']}"),
         ("ACRONYM", "Trial Acronym", st.get("acronym")),
         ("REGID", "Registry Identifier", st.get("source_nct")),
         ("SPONSOR", "Clinical Study Sponsor", "FICTIONAL SPONSOR (synthetic data)"),
@@ -261,8 +261,13 @@ def trial_summary(spec, n_rand, cutoff) -> pd.DataFrame:
         if val is None and cd in ("LENGTH", "SENDTC", "THERAREA", "ACRONYM"):
             continue  # open-ended trial / study not yet ended / unknown area
         seq[cd] = seq.get(cd, 0) + 1
-        out.append({"STUDYID": st["studyid"], "DOMAIN": "TS", "TSSEQ": seq[cd], "TSPARMCD": cd,
-                    "TSPARM": name, "TSVAL": val, "TSVALNF": None if val else "NA"})
+        rec = {"STUDYID": st["studyid"], "DOMAIN": "TS", "TSSEQ": seq[cd], "TSPARMCD": cd,
+               "TSPARM": name, "TSVAL": val, "TSVALNF": None if val else "NA"}
+        if val and len(val) > 200:  # SDTMIG: text beyond 200 chars continues in TSVAL1, TSVAL2, ...
+            chunks = [val[i:i + 200] for i in range(0, len(val), 200)]
+            rec["TSVAL"] = chunks[0]
+            rec.update({f"TSVAL{k}": c for k, c in enumerate(chunks[1:], start=1)})
+        out.append(rec)
     return pd.DataFrame(out)
 
 
