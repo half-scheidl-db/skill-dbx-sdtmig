@@ -16,6 +16,7 @@ skill-dbx-sdtmig/                 ← register this folder as a skills folder
 │   │   ├── workbook-readme.md
 │   │   ├── cdisc_therapeutic_areas.md
 │   │   ├── databricks-patterns.md
+│   │   ├── unity-catalog-mapping.md
 │   │   ├── ai-query-templates.md
 │   │   ├── synthetic-study-generation.md  ← workflow: NCT ID -> spec -> SDTM -> validation
 │   │   ├── ctgov-mapping.md

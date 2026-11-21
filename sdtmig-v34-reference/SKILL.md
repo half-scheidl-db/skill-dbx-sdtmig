@@ -30,6 +30,7 @@ A **reference skill** for SDTMIG v3.4 metadata. It gives you datasets, variables
    | Meaning of a workbook column (Core, Role, Value List…) | `references/workbook-readme.md` |
    | Which therapeutic areas have TAUGs and which standards they cover | `references/cdisc_therapeutic_areas.md` |
    | Building SDTM tables, pipelines, DQ expectations, XPT ingestion, synthetic data on Databricks | `references/databricks-patterns.md` |
+   | Mapping SDTM metadata to Unity Catalog: column types, comments, tags, constraints | `references/unity-catalog-mapping.md` |
    | Using `ai_query` for MedDRA coding, epoch checks, narrative extraction | `references/ai-query-templates.md` |
    | **Generating a coherent synthetic SDTM study** (from an NCT ID or trial design) | `references/synthetic-study-generation.md` **first**, then `references/ctgov-mapping.md` and `assets/study-spec-template.yaml` |
    | Checking an SDTM dataset for cross-domain consistency (dates, death, EPOCH, AE↔EX, ranges) | `references/coherence-rules.md` + `scripts/validate_sdtm.py` |
